@@ -1,0 +1,68 @@
+---
+title: "Prophet Forecast with Regressors"
+output: github_document
+author:  Chris Bailey
+date: '`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      cache = TRUE, dpi = 180, fig.width = 5, fig.height = 8)
+```
+
+## Install Packages
+
+```{r}
+library(prophet)
+library(lubridate)
+library(tidyverse)
+```
+
+## Load data
+```{r}
+# Bike sharing data
+data <- read.csv(file.choose(), header = T)
+data$dteday <- ymd(data$dteday)
+```
+
+## Explore
+```{r}
+# Plot
+qplot(dteday, cnt, data = data,
+      main = 'Bike Rentals in Washington DC')
+```
+
+## Model
+
+```{r}
+# Data
+ds <- data$dteday
+y <- data$cnt
+df <- data.frame(ds, y)
+
+# Forecasting model
+m <- prophet()
+m <- add_country_holidays(m, country_name = 'US')
+# m <- add_regressor(m, ' ') # add column of data
+m <- fit.prophet(m, df)
+
+# Prediction
+future <- make_future_dataframe(m, periods = 10)
+forecast <- predict(m, future)
+
+# Plot forecast
+plot(m, forecast)
+dyplot.prophet(m, forecast)
+
+# Forecast components
+prophet_plot_components(m, forecast)
+
+# Model performance
+pred <- forecast$yhat[1:731]
+actual <- df[,2]
+plot(actual, pred)
+abline(lm(pred~actual), col = 'red')
+summary(lm(pred~actual))
+
+```
+
